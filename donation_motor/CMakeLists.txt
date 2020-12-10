@@ -22,3 +22,9 @@ target_link_libraries(motor_node ${catkin_LIBRARIES} pigpiod_if2)
 add_executable(button_node src/button_node.cpp)
 add_dependencies(button_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(button_node ${catkin_LIBRARIES} pigpiod_if2)
+
+
+add_executable(test_node src/test_node.cpp)
+add_dependencies(test_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(test_node ${catkin_LIBRARIES} pigpiod_if2)
+

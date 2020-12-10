@@ -28,7 +28,7 @@ enum _case{
     Back_Origin,
 };
 
-#define OBSTACLEDETECTION 0.3
+#define OBSTACLEDETECTION 0.7
 
 
 // msg.x mean distance 
@@ -39,7 +39,7 @@ void poseMsgCallback(const geometry_msgs::Pose2D msg){
     obstacle_distance = msg.x;
     obstacle_theta = msg.theta;
     
-    if(obstacle_distance == 0)  obstacle_distance=5;
+    if(obstacle_distance == 0)  obstacle_distance=5; // obstacle_distance = 0 mean detect nothing
 }
 
 float rad2deg(float radian)
@@ -112,16 +112,14 @@ int main(int argc, char** argv){
 
        if( obstacle_distance < OBSTACLEDETECTION && obstacle_theta < deg2rad(20) && 
 obstacle_theta > deg2rad(-20) ){
-            if (obstacle_theta >= 0)    pose.theta =deg2rad(-50);
-            else pose.theta = deg2rad(50);
+            //if (obstacle_theta >= 0)    vel.angular.z = -MAX_ANGULAR;
+            //else    vel.angular.z = +MAX_ANGULAR;
             vel.angular.z = 0;
             vel.linear.x = 0;
             cmd_pub.publish(vel);
             continue;
-            pose.x = 0.2;
+            
         }
-
-
 
 
         double x = pose.theta;

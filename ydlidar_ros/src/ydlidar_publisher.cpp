@@ -37,12 +37,12 @@ void scanCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
     for(int i = 0 ; i <start ; i++){
         
 
-        if(degree_distance[start+i][DISTANCE] > 0.1 && degree_distance[start+i][DISTANCE]<1.2){
+        if(degree_distance[start+i][DISTANCE] > 0.1 && degree_distance[start+i][DISTANCE]<1.7){
           
             x_axis_closeDegree = degree_distance[start+i][DEGREE];
             x_axis_closeDistance = degree_distance[start+i][DISTANCE];
             break;
-        }else if(degree_distance[start-i][DISTANCE] > 0.1 && degree_distance[start-i][DISTANCE]<1.2){
+        }else if(degree_distance[start-i][DISTANCE] > 0.1 && degree_distance[start-i][DISTANCE]<1.7){
             
             x_axis_closeDegree = degree_distance[start-i][DEGREE];
             x_axis_closeDistance = degree_distance[start-i][DISTANCE];

@@ -20,7 +20,7 @@ int main(int argc, char** argv){
   set_mode(pinum, BUTTON_READER, PI_INPUT);
   set_pull_up_down(pinum, BUTTON_READER, PI_PUD_UP);
   
-  ros::Rate loop_rate(1);
+  ros::Rate loop_rate(15);
 
 
   while(ros::ok()){

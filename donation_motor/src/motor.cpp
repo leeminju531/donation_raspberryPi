@@ -7,13 +7,14 @@
 #include <motor_header/motor.h>
 #include <fstream>
 
+pthread_t* thread_num1;
 
 void Text_Input(void)
 {
   int i = 0;
   std::size_t found;
   std::ifstream inFile;
-  inFile.open("/home/ubuntu/catkin_ws/src/donation_raspberry4b/donation_motor/motor_input.txt");
+  inFile.open("/home/ubuntu/catkin_ws/src/donation_raspberrypi4/donation_motor/motor_input.txt");
   for(std::string line; std::getline(inFile,line);)
   {
       found=line.find("=");
@@ -84,8 +85,8 @@ int Motor_Setup(void)
   current_PWM1 = 0;
   current_PWM2 = 0;
 
-  current_Direction1 = true;
-  current_Direction2 = true;
+  MotorDir[LEFT_MOTOR] = true;
+  MotorDir[RIGHT_MOTOR] = true;
 
   acceleration = PWM_limit/(Acceleration_ratio);
 
@@ -94,25 +95,31 @@ int Motor_Setup(void)
 }
 
 void Interrupt_Setting(void)
-{
+{  // thread_num1 = start_thread(Interrupt1A, &dsa);
     callback(pinum, motor1_ENA, EITHER_EDGE, Interrupt1A);
     callback(pinum, motor1_ENB, EITHER_EDGE, Interrupt1B);
-    callback(pinum, motor2_ENA, EITHER_EDGE, Interrupt2A);
     callback(pinum, motor2_ENB, EITHER_EDGE, Interrupt2B);
+    callback(pinum, motor2_ENA, EITHER_EDGE, Interrupt2A);
+    
 }
 int lastEncoded=0;
+//gpioThreadFunc_t asd
+
+
 
 void Interrupt1A(int pi, unsigned user_gpio, unsigned level, uint32_t tick)
 {
  
-//if(gpio_read(pinum,motor1_ENA)==true && gpio_read(pinum,motor1_ENB) ==false) EncoderCounter1A ++;
-// else if(gpio_read(pinum,motor1_ENA)==false && gpio_read(pinum,motor1_ENB) == true) EncoderCounter1A ++;
-// else if(gpio_read(pinum,motor1_ENA)==true && gpio_read(pinum,motor1_ENB) ==true) EncoderCounter1A-- ;
-// else if (gpio_read(pinum,motor1_ENA)==false && gpio_read(pinum,motor1_ENB) ==false) EncoderCounter1A-- ;
- if(gpio_read(pinum, MotorDir[LEFT_MOTOR]) == true)    EncoderCounter1A ++;
- else EncoderCounter1A --;
-  EncoderCounter1B = EncoderCounter1A;
-  EncoderSpeedCounter1 ++;
+  //if(gpio_read(pinum,motor1_ENA)==true && gpio_read(pinum,motor1_ENB) ==false) EncoderCounter1A ++;
+ // else if(gpio_read(pinum,motor1_ENA)==false & gpio_read(pinum,motor1_ENB) == true) EncoderCounter1A ++;
+ // else if(gpio_read(pinum,motor1_ENA)==true && gpio_read(pinum,motor1_ENB) ==true) EncoderCounter1A-- ;
+ // else if (gpio_read(pinum,motor1_ENA)==false && gpio_read(pinum,motor1_ENB) ==false) EncoderCounter1A-- ;
+ //printf("A : %d || B : %d \n",gpio_read(pinum,motor1_ENA),gpio_read(pinum,motor1_ENB));
+ //printf("   encoder A : %d \n",EncoderCounter1A);
+
+  if(gpio_read(pinum, motor1_DIR) == true)  EncoderCounter1A ++;
+  else EncoderCounter1A --;
+  
   EncoderSpeedCounter1 ++;
 }
 void Interrupt1B(int pi, unsigned user_gpio, unsigned level, uint32_t tick)
@@ -122,41 +129,48 @@ void Interrupt1B(int pi, unsigned user_gpio, unsigned level, uint32_t tick)
 // else if(gpio_read(pinum,motor1_ENA)==false && gpio_read(pinum,motor1_ENB) == true) EncoderCounter1B --;
 // else if(gpio_read(pinum,motor1_ENA)==true && gpio_read(pinum,motor1_ENB) ==true) EncoderCounter1B++ ;
 // else if (gpio_read(pinum,motor1_ENA)==false && gpio_read(pinum,motor1_ENB) ==false) EncoderCounter1B++ ;
- // if(gpio_read(pinum, MotorDir[LEFT_MOTOR]) == true)EncoderCounter1B ++;
- // else EncoderCounter1B --;
-  //EncoderSpeedCounter1 ++;
- // EncoderSpeedCounter1 ++;
+ if(gpio_read(pinum,motor1_DIR) == true) EncoderCounter1B ++;
+ else EncoderCounter1B --;
+ 
+  EncoderSpeedCounter1 ++;
 }
 void Interrupt2A(int pi, unsigned user_gpio, unsigned level, uint32_t tick)
 {
     
-//int MSB = pio_read(pinum,motor2_ENA);
+//int MSB = gpio_read(pinum,motor2_ENA);
 //int LSB = gpio_read(pinum,motor2_ENB);
 
-// int encoded = (MSB<<1) | LSB;
-// int sum = (lastEncoded<<2) | encoded;
+ //int encoded = (MSB<<1) | LSB;
+ //int sum = (lastEncoded<<2) | encoded;
 
-// if(sum == 0b1000 || sum ==0b0001 | sum = 0b0111 | sum = 0b1110) EncoderCounter1A ++;
-// if(sum == 0b1000 || sum ==0b0001 | sum = 0b0111 | sum = 0b1110) EncoderCounter1A ++;
+ //if(sum == 0b1000 || sum ==0b0001 || sum == 0b0111 || sum == 0b1110) EncoderCounter2A ++;
+ //else if(sum == 0b0010 || sum ==0b1011 || sum == 0b1101 || sum == 0b0100) EncoderCounter2A --;
+
+ //if(sum == 0b1000) EncoderCounter2A ++;
  
-// lastEncoded = encoded;
+ //lastEncoded = encoded;
 
-//if(gpio_read(pinum,motor2_ENA)==true && gpio_read(pinum,motor2_ENB) ==false) EncoderCounter2A ++;
-// else if(gpio_read(pinum,motor2_ENA)==false && gpio_read(pinum,motor2_ENB) == true) EncoderCounter2A ++;
-// else if(gpio_read(pinum,motor2_ENA)==true && gpio_read(pinum,motor2_ENB) ==true) EncoderCounter2A-- ;
-// else if (gpio_read(pinum,motor2_ENA)==false && gpio_read(pinum,motor2_ENB) ==false) EncoderCounter2A-- ;
-  if(gpio_read(pinum, MotorDir[RIGHT_MOTOR]) == true)EncoderCounter2A ++;
+ //if(gpio_read(pinum,motor2_ENA)==true && gpio_read(pinum,motor2_ENB) ==false) EncoderCounter2A ++;
+ //else if(gpio_read(pinum,motor2_ENA)==false && gpio_read(pinum,motor2_ENB) == true) EncoderCounter2A ++;
+ //else if(gpio_read(pinum,motor2_ENA)==true && gpio_read(pinum,motor2_ENB) ==true) EncoderCounter2A-- ;
+ //else if (gpio_read(pinum,motor2_ENA)==false && gpio_read(pinum,motor2_ENB) ==false) EncoderCounter2A-- ;
+ //printf("A : %d || B : %d \n",gpio_read(pinum,motor2_ENA),gpio_read(pinum,motor2_ENB));
+ //printf("   encoder A : %d \n",EncoderCounter2A);
+
+ if(gpio_read(pinum, motor2_DIR) == false)EncoderCounter2A ++;
   else EncoderCounter2A --;
   EncoderSpeedCounter2 ++;
 }
 void Interrupt2B(int pi, unsigned user_gpio, unsigned level, uint32_t tick)
 {
-//if(gpio_read(pinum,motor2_ENA)==true && gpio_read(pinum,motor2_ENB) ==false) EncoderCounter2B --;
-// else if(gpio_read(pinum,motor2_ENA)==false && gpio_read(pinum,motor2_ENB) == true) EncoderCounter2B --;
-// else if(gpio_read(pinum,motor2_ENA)==true && gpio_read(pinum,motor2_ENB) ==true) EncoderCounter2B++ ;
-// else if (gpio_read(pinum,motor2_ENA)==false && gpio_read(pinum,motor2_ENB) ==false) EncoderCounter2B++ ;
-  if(gpio_read(pinum, MotorDir[RIGHT_MOTOR]) == true)EncoderCounter2B ++;
-  else EncoderCounter2B --;
+ //if(gpio_read(pinum,motor2_ENA)==true && gpio_read(pinum,motor2_ENB) ==false) EncoderCounter2B --;
+//else if(gpio_read(pinum,motor2_ENA)==false && gpio_read(pinum,motor2_ENB) == true) EncoderCounter2B --;
+//else if(gpio_read(pinum,motor2_ENA)==true && gpio_read(pinum,motor2_ENB) ==true) EncoderCounter2B++ ;
+//else if (gpio_read(pinum,motor2_ENA)==false && gpio_read(pinum,motor2_ENB) ==false) EncoderCounter2B++ ;
+ 
+
+ if(gpio_read(pinum, motor2_DIR) == false)EncoderCounter2B ++;
+ else EncoderCounter2B --;
   EncoderSpeedCounter2 ++;
 }
 
@@ -212,25 +226,18 @@ void Initialize(void)
 
 
 
-
-
-
-
-
-
-
-
 void Motor_Controller(int motor_num, bool direction, int pwm)
 {
   int local_PWM = Limit_Function(pwm);
 
-  if(motor_num == 1)
+  if(motor_num == LEFT_MOTOR)
   {
     if(direction == true)
     {
-      gpio_write(pinum, motor1_DIR, PI_HIGH);
+      gpio_write(pinum, motor1_DIR,  PI_HIGH );
       set_PWM_dutycycle(pinum, motor1_PWM, local_PWM);
       current_PWM1 = local_PWM;
+      MotorDir[LEFT_MOTOR] = true;
       current_Direction1 = true; // for control accelation
     }
     else if(direction == false)
@@ -238,25 +245,28 @@ void Motor_Controller(int motor_num, bool direction, int pwm)
       gpio_write(pinum, motor1_DIR, PI_LOW);
       set_PWM_dutycycle(pinum, motor1_PWM, local_PWM);
       current_PWM1 = local_PWM;
+      MotorDir[LEFT_MOTOR] = false;
       current_Direction1 = false;
     }
   }
   
-  else if(motor_num == 2)
+  else if(motor_num == RIGHT_MOTOR)
   {
    if(direction == true)
    {
-     gpio_write(pinum, motor2_DIR, PI_LOW);
+     gpio_write(pinum, motor2_DIR, PI_LOW );
      set_PWM_dutycycle(pinum, motor2_PWM, local_PWM);
      current_PWM2 = local_PWM;
      current_Direction2 = true;
+     MotorDir[RIGHT_MOTOR] = true;
    }
    else if(direction == false)
    {
-     gpio_write(pinum, motor2_DIR, PI_HIGH);
+     gpio_write(pinum, motor2_DIR, PI_HIGH );
      set_PWM_dutycycle(pinum, motor2_PWM, local_PWM);
      current_PWM2 = local_PWM;
      current_Direction2 = false;
+     MotorDir[RIGHT_MOTOR] = false;
    }
   }
 }

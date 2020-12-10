@@ -31,7 +31,8 @@ enum _monitor{
 
 #define CLOSE_DISTANCE 0.3 // m
 
-
+#define DELTA_LINEAR_VEL 0.05
+#define DELTA_ANGULAR_VEL 0.2
 
 char motor_Action_Flag = Basic;
 
@@ -64,6 +65,11 @@ double RPM2Vel(double rpm){
     return vel;
 }
 
+double encoder2Vel(double encoder){
+
+    
+}
+
 // rpm unit : 2*pi/60 (rad/min)
 double vel2RPM(double vel){
     double rpm = vel/(2*PI*Wheel_radius)*60*100;
@@ -82,10 +88,10 @@ void update_targetRPM(double linearV_X,double angularV_Z){
     LEFT_TARGET_RPM = linearV_X2Rpm[LEFT_MOTOR] + angularV_Z2Rpm[LEFT_MOTOR];
     RIGHT_TARGET_RPM = linearV_X2Rpm[RIGHT_MOTOR] + angularV_Z2Rpm[RIGHT_MOTOR];
 
-    if(LEFT_TARGET_RPM > 0) MotorDir[LEFT_MOTOR] = true;
+    if(LEFT_TARGET_RPM >= 0) MotorDir[LEFT_MOTOR] = true;
     else MotorDir[LEFT_MOTOR] = false;
 
-    if(RIGHT_TARGET_RPM > 0) MotorDir[RIGHT_MOTOR] = true;
+    if(RIGHT_TARGET_RPM >= 0) MotorDir[RIGHT_MOTOR] = true;
     else MotorDir[RIGHT_MOTOR] = false;
     
     TargetRPM[LEFT_MOTOR] = abs(LEFT_TARGET_RPM);
@@ -185,8 +191,10 @@ void pos_pid(float distance, float theta){
 
     if(distance < 0.6)  {
         linearV_X = 0;
-        if(theta < 0.088 && theta >-0.088) angularV_Z = 0; //0.088rad = 5 degree
+        if(linearV_X < 0 )  linearV_X = 0;
 
+        if(theta < DEG2RAD(5) && theta >DEG2RAD(-5)) angularV_Z = 0; //0.088rad = 5 degree
+    
     }else if(distance <= 1) linearV_X = MAX_LINEAR_VEL*( sqrt(1-(distance-1)/0.4) )*( sqrt(1+(distance-1)/0.4) );   //linearV_X = 5.56*(distance-0.7)*(distance-0.7);
     else if( distance > 1) linearV_X = MAX_LINEAR_VEL;
     
@@ -259,14 +267,10 @@ void pidControl(){
     local_pwm[RIGHT_MOTOR] = Limit_Function(output[RIGHT_MOTOR] );
     b = local_pwm[RIGHT_MOTOR];
 // -------------------------------------------------------------------------
-    if(angularVel < 0.3 || linearVel < 0.4){
-        Motor_Controller(LEFT_MOTOR+1, MotorDir[LEFT_MOTOR] , local_pwm[LEFT_MOTOR] );
-        Motor_Controller(RIGHT_MOTOR+1, MotorDir[RIGHT_MOTOR] , local_pwm[RIGHT_MOTOR]);
-
-    }else{
-        Motor_Controller(LEFT_MOTOR+1, MotorDir[LEFT_MOTOR] , local_pwm[LEFT_MOTOR] );
-        Motor_Controller(RIGHT_MOTOR+1, MotorDir[RIGHT_MOTOR] , local_pwm[RIGHT_MOTOR]);
-    }
+    
+    Motor_Controller(LEFT_MOTOR, MotorDir[LEFT_MOTOR] , local_pwm[LEFT_MOTOR] );
+    Motor_Controller(RIGHT_MOTOR, MotorDir[RIGHT_MOTOR] , local_pwm[RIGHT_MOTOR]);
+    
 
     pre_output[LEFT_MOTOR] = output[LEFT_MOTOR];
     pre_output[RIGHT_MOTOR] = output[RIGHT_MOTOR];
@@ -283,7 +287,7 @@ void update_real_vel(){
 
 
     real_linerVel_X = ( leftMotorVel + rightMotorVel )/2;
-    real_angularVel_Z = ( leftMotorVel - rightMotorVel )/-2/Robot_radius*100;
+    real_angularVel_Z = ( rightMotorVel - leftMotorVel )/2/Robot_radius*100;
 
     
 }
@@ -300,18 +304,18 @@ void Motor_View()
 	printf("\033[1;1H");
 	printf("Encoder1A : %5d  ||  Encoder2A : %5d\n", EncoderCounter1A, EncoderCounter2A);
 	printf("Encoder1B : %5d  ||  Encoder2B : %5d\n", EncoderCounter1B, EncoderCounter2B);
-	printf("Current RPM1 : %10.0f    || Current RPM2 : %10.0f\n", CurlRPM[LEFT_MOTOR] , CurlRPM[RIGHT_MOTOR]);
-    printf("TargetRPM1 :%10.0f     ||  TargetRPM2 :%10.0f\n", TargetRPM[LEFT_MOTOR], TargetRPM[RIGHT_MOTOR]);
+	printf("Current RPM1 : %10.3f    || Current RPM2 : %10.3f\n", CurlRPM[LEFT_MOTOR] , CurlRPM[RIGHT_MOTOR]);
+    printf("TargetRPM1 :%10.3f     ||  TargetRPM2 :%10.3f\n", TargetRPM[LEFT_MOTOR], TargetRPM[RIGHT_MOTOR]);
     printf("motor1_p : %f || motor2_P : %f \n",P[LEFT_MOTOR],P[RIGHT_MOTOR]);
     printf("motor1_I : %f || motor2_I : %f\n",I[LEFT_MOTOR],I[RIGHT_MOTOR]);
     printf("motor1_D : %f || motor2_D : %f \n",D[LEFT_MOTOR],D[RIGHT_MOTOR]);
     printf("motor1 pwm :%10.0d  || motor2 pwm :%10.0d\n",a,b);
-  
+    
     
     printf(" robot linearVelocity : %f(m/s) || angularVel : %f(rad/s)\n",linearVel,angularVel);
     printf(" sub distance : %f(m) || angle : %f (rad)\n",distance,theta);
 
-
+    printf("motor1 dir : %d || motor2 dir: %d \n ",MotorDir[LEFT_MOTOR],MotorDir[RIGHT_MOTOR]);
     printf("target_linearVel : %.3f || target_angularVel : %.3f\n",linearVel,angularVel);
     printf("real_linearVel : %.3f || real_angularVel : %.3f\n",real_linerVel_X,real_angularVel_Z);
 
@@ -346,7 +350,7 @@ void InteractionCallback(const std_msgs::String msg){
 
 void buttonCallback(const std_msgs::Byte msg){
     
-    if(motor_Action_Flag != Tracking)    return;
+   // if(motor_Action_Flag != Tracking || motor_Action_Flag != INTERACTION)    return;
     //printf("msg.data : %d \n",msg.data);
     push_Button = msg.data;
 }
@@ -362,7 +366,7 @@ void detectCallback(const std_msgs::Byte msg){
 
 
 int main(int argc, char** argv)
-{
+{ 
   ros::init(argc, argv, "motor_node");
   ros::NodeHandle nh;
   Initialize();
@@ -387,6 +391,8 @@ int main(int argc, char** argv)
 
   ros::Subscriber DetectPerson = nh.subscribe("/cam/detect",10,detectCallback);
   int detectCount = 0; 
+  double pre_theta;
+  double pre_distance;
   while(ros::ok())
   {
     switch(motor_Action_Flag){
@@ -394,17 +400,20 @@ int main(int argc, char** argv)
             ROS_INFO("BASIC STATE");
             ROS_INFO("PointTurn untill Person Detection");
             
-            pos_pid(0,theta);
-                
-            printf("distance : %f || theta = %f \n",distance, RAD2DEG(theta));
-            printf("angularVel : %f\n",angularVel);
+         //   
+           // pos_pid(0.8,0);
+      //      update_targetRPM(0.4,0);   
+    //        printf("distance : %f || theta = %f \n",distance, RAD2DEG(theta));
+     //       printf("angularVel : %f\n",angularVel);
+            TargetRPM[LEFT_MOTOR] = 0;
+            TargetRPM[RIGHT_MOTOR] = 70;
             if(distance >0 && distance < FIRST_DETECTION_DISTANCE_AREA)
                 if(theta > DEG2RAD(-5) && theta < DEG2RAD(5))   detectCount++;
                 else    detectCount = 0;
 
             if(detectCount >= 20){ // 2sec
                  detectCount = 0;
-                 motor_Action_Flag = Tracking;
+              //   motor_Action_Flag = Tracking;
             }          
             break;
        
@@ -422,6 +431,8 @@ int main(int argc, char** argv)
                 printf("voice call\n");
             }
 
+           
+
 
             if(push_Button == true){
                 push_Button = false;
@@ -436,6 +447,15 @@ int main(int argc, char** argv)
             ROS_INFO("INTERACTION....");
             update_targetRPM(0,0);
         
+            //temporary code        
+            detectCount++;
+            if(push_Button == true && detectCount > 20){
+                detectCount = 0;
+                push_Button = false;
+                motor_Action_Flag = Back_Origin;
+            }
+            //end 
+        
             if (interaction_done == true){
                 interaction_done = false;
                 
@@ -447,7 +467,7 @@ int main(int argc, char** argv)
         case Back_Origin:
   
 
-            double OBSTACLEDETECTION = 0.5;
+            double OBSTACLEDETECTION = 0.8;
             if( distance >0 && distance < OBSTACLEDETECTION && theta < DEG2RAD(20) && 
 theta > DEG2RAD(-20) ){
             linearVel = 0;
@@ -465,18 +485,19 @@ theta > DEG2RAD(-20) ){
             
     }
     pidControl();
- //   Motor_View();
+    Motor_View();
 
     
     odom.linear.x = real_linerVel_X;
     odom.angular.z = real_angularVel_Z;
     odomPub.publish(odom);
 
-    
+    printf("angularVel : %f \n",angularVel);
     ros::spinOnce();
     loop_rate.sleep();
   }
-  Motor_Controller(1, true, 0);
-  Motor_Controller(2, true, 0);
+//  stop_thread(thread_num1);
+  Motor_Controller(LEFT_MOTOR, true, 0);
+  Motor_Controller(RIGHT_MOTOR, true, 0);
   return 0;
 }
