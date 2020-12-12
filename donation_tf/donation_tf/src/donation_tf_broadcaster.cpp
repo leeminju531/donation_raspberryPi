@@ -28,8 +28,8 @@ void velCallback(const geometry_msgs::Twist msg){
 	x += delta_x;
 	y += delta_y;
 	th += delta_angle;
-
-
+    
+    
 	geometry_msgs::TransformStamped transformStamped; 
 
 	transformStamped.header.stamp = ros::Time::now();//we need to give the transform being published a timestamp, in this case current time
@@ -48,11 +48,9 @@ void velCallback(const geometry_msgs::Twist msg){
 
 	br.sendTransform(transformStamped); // this is where real work is done
 
-	printf("delta_x = %.3f || delta_y = %.3f || delta_th = %.3f\n",delta_x,delta_y,delta_angle);
-	printf("x = %.3f || y = %.3f || theta = %.3f\n",x,y,th);
-	printf("delta_distance : %f || delta_angle = %f\n",delta_distance,delta_angle);
-
-
+	//printf("delta_x = %.3f || delta_y = %.3f || delta_th = %.3f\n",delta_x,delta_y,delta_angle);
+	//printf("x = %.3f || y = %.3f || theta = %.3f\n",x,y,th);
+	//printf("delta_distance : %f || delta_angle = %f\n",delta_distance,delta_angle);
 
 
 

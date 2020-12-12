@@ -4,6 +4,8 @@
 #include <std_msgs/String.h>
 #include <geometry_msgs/Twist.h>
 #include <std_msgs/Byte.h>
+#include <pthread.h>
+
 
 enum _case{
     Basic = 0,
@@ -29,7 +31,7 @@ enum _monitor{
 #define MAX_LINEAR_VEL 0.5 //(m/s)
 #define MAX_ANGULAR_VEL 2
 
-#define CLOSE_DISTANCE 0.3 // m
+#define CLOSE_DISTANCE 0.9 // m
 
 #define DELTA_LINEAR_VEL 0.05
 #define DELTA_ANGULAR_VEL 0.2
@@ -160,11 +162,11 @@ void pos_pid(){
 
     if(theta < 0.088 && theta >-0.088) angularV_Z = 0; //0.088rad = 5 degree
 
-    if(distance < 0.6)  {
+    if(distance < 0.8)  {
         linearV_X = 0;
         if(theta < 0.088 && theta >-0.088) angularV_Z = 0; //0.088rad = 5 degree
 
-    }else if(distance <= 1) linearV_X = MAX_LINEAR_VEL*( sqrt(1-(distance-1)/0.4) )*( sqrt(1+(distance-1)/0.4) );   //linearV_X = 5.56*(distance-0.7)*(distance-0.7);
+    }else if(distance <= 1) linearV_X = MAX_LINEAR_VEL*( sqrt(1-(distance-1)/0.2) )*( sqrt(1+(distance-1)/0.2) );   //linearV_X = 5.56*(distance-0.7)*(distance-0.7);
     else if( distance > 1) linearV_X = MAX_LINEAR_VEL;
     
   //  linearV_X = 0;
@@ -363,6 +365,25 @@ void detectCallback(const std_msgs::Byte msg){
 }
 
 
+void* thread_LeftEncoder(void *message){
+   printf("start thread func\n");
+    while(1){
+        callback(pinum, motor1_ENA, EITHER_EDGE, Interrupt1A);
+        callback(pinum, motor1_ENB, EITHER_EDGE, Interrupt1B);
+        callback(pinum, motor2_ENB, EITHER_EDGE, Interrupt2B);
+        callback(pinum, motor2_ENA, EITHER_EDGE, Interrupt2A);
+        printf("in Thread func\n");
+    }
+    printf("end of Letf Encoder Thread !! \n");
+}
+
+void* thread_RightEncoder(void *message){
+    while(1){
+        
+    }
+    printf("end of Right Encoder Thread !! \n");
+
+}
 
 
 int main(int argc, char** argv)
@@ -370,6 +391,23 @@ int main(int argc, char** argv)
   ros::init(argc, argv, "motor_node");
   ros::NodeHandle nh;
   Initialize();
+ // void* result;
+  printf("111");
+  //pthread_t *ptr;
+  //ptr = start_thread(thread_LeftEncoder,NULL);
+  printf("222");
+
+  //if( ptr == NULL )  {
+  //  printf("fail Left Encoder thread\n");
+  //  exit(1);
+  //}
+
+ // ptr_Right = start_thread(thread_RightEncoder,&result);
+  //if( ptr_Right == NULL )  {
+  //  printf("fail Right Encoder thread\n");
+  //  exit(1);
+ // }
+  
   ros::Rate loop_rate(Control_cycle);
   //ros::Subscriber pose_sub = nh.subscribe("/motor_node/depth/pose",1,poseMsgCallback);
   ros::Subscriber pose_sub = nh.subscribe("/motor_node/ydlidar/pose",10,poseMsgCallback);
@@ -379,8 +417,8 @@ int main(int argc, char** argv)
   MotorDir[LEFT_MOTOR] = true;
   MotorDir[RIGHT_MOTOR] = true;
   motor_Action_Flag = Basic;
-  int count = 0;
-
+  
+  
   geometry_msgs::Twist odom;
   ros::Publisher odomPub = nh.advertise <geometry_msgs::Twist>("/motor_node/cmd_vel",10);
 
@@ -391,43 +429,51 @@ int main(int argc, char** argv)
 
   ros::Subscriber DetectPerson = nh.subscribe("/cam/detect",10,detectCallback);
   int detectCount = 0; 
+  int trackingCount = 0;
   double pre_theta;
   double pre_distance;
   while(ros::ok())
   {
     switch(motor_Action_Flag){
         case Basic:
-            ROS_INFO("BASIC STATE");
-            ROS_INFO("PointTurn untill Person Detection");
+         //   ROS_INFO("BASIC STATE");
+          //  ROS_INFO("PointTurn untill Person Detection");
             
          //   
-           // pos_pid(0.8,0);
+            pos_pid(0,theta);
       //      update_targetRPM(0.4,0);   
     //        printf("distance : %f || theta = %f \n",distance, RAD2DEG(theta));
      //       printf("angularVel : %f\n",angularVel);
-            TargetRPM[LEFT_MOTOR] = 0;
-            TargetRPM[RIGHT_MOTOR] = 70;
+           // TargetRPM[LEFT_MOTOR] = 50;
+           // TargetRPM[RIGHT_MOTOR] = 50;
             if(distance >0 && distance < FIRST_DETECTION_DISTANCE_AREA)
                 if(theta > DEG2RAD(-5) && theta < DEG2RAD(5))   detectCount++;
                 else    detectCount = 0;
 
-            if(detectCount >= 20){ // 2sec
+            if(detectCount >= 30){ // 3sec
                  detectCount = 0;
-              //   motor_Action_Flag = Tracking;
+                 motor_Action_Flag = Tracking;
             }          
             break;
        
         case Tracking :
+            trackingCount++;
             ROS_INFO("Person Tracking");
             
             pos_pid();
    
-            if(world_distance_at_robotFrame > 4)    motor_Action_Flag=Back_Origin;
-
-
+            if(world_distance_at_robotFrame > 4){
+                motor_Action_Flag=Back_Origin;
+                trackingCount = 0;
+            }
+            if (trackingCount > 1/Control_cycle*10*60*5  ){ // person no response for 5 min ->back origin
+                motor_Action_Flag = Back_Origin;
+                trackingCount = 0;
+            }
             if (distance > 0 && distance < CLOSE_DISTANCE){
                 monitor_control.data = "1";
                 MonitorControl.publish(monitor_control);
+                trackingCount = 0;
                 printf("voice call\n");
             }
 
@@ -465,9 +511,9 @@ int main(int argc, char** argv)
             break;  
 
         case Back_Origin:
-  
+            
 
-            double OBSTACLEDETECTION = 0.8;
+            double OBSTACLEDETECTION = 1.2;
             if( distance >0 && distance < OBSTACLEDETECTION && theta < DEG2RAD(20) && 
 theta > DEG2RAD(-20) ){
             linearVel = 0;
@@ -476,7 +522,7 @@ theta > DEG2RAD(-20) ){
 
             update_targetRPM(linearVel,angularVel);
             
-            if(world_distance_at_robotFrame < 0.1)//ERROR_DISTANCE)
+            if(world_distance_at_robotFrame <0.1)//ERROR_DISTANCE)
                 motor_Action_Flag = Basic;
             
 
@@ -490,14 +536,18 @@ theta > DEG2RAD(-20) ){
     
     odom.linear.x = real_linerVel_X;
     odom.angular.z = real_angularVel_Z;
+  
     odomPub.publish(odom);
 
-    printf("angularVel : %f \n",angularVel);
+    
     ros::spinOnce();
     loop_rate.sleep();
+   
   }
-//  stop_thread(thread_num1);
+  
   Motor_Controller(LEFT_MOTOR, true, 0);
   Motor_Controller(RIGHT_MOTOR, true, 0);
+  //stop_thread(ptr);
+ // stop_thread(ptr_Right);
   return 0;
 }

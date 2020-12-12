@@ -15,8 +15,8 @@
     <param name="frequency"    type="double" value="10"/>
     <param name="samp_rate"    type="int"    value="5"/>
   </node>
-    <node name="ydlidar_publisher" pkg="ydlidar_ros" type = "ydlidar_publisher"   />
-    <node name="motor_node" pkg="donation_motor" type = "motor_node"  output="screen" />
+    <node name="ydlidar_publisher" pkg="ydlidar_ros" type = "ydlidar_publisher" output="screen"  />
+    <node name="motor_node" pkg="donation_motor" type = "motor_node"   />
     <node name="donation_tf_broadcaster" pkg="donation_tf" type = "donation_tf_broadcaster"   />
     <node name="donation_tf_listener" pkg="donation_tf" type = "donation_tf_listener"/>
     <node name="button_node" pkg="donation_motor" type="button_node"/>
