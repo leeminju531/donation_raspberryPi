@@ -8,6 +8,10 @@
 #define DEGREE 0
 #define DISTANCE 1
 
+#define HARDWARE_ANGLE 60 // DEGREE
+
+
+
 int cnt = 0;
 float degree_distance[400][2]{};
 int cant_find= false;
@@ -26,8 +30,9 @@ void scanCallback(const sensor_msgs::LaserScan::ConstPtr& scan)
   
     for(int i = 0; i < count; i++) {
         float degree = RAD2DEG(scan->angle_min + scan->angle_increment * i);
-	    if(degree > -80 && degree< 80){
+	    if(degree > -80 + HARDWARE_ANGLE && degree< 80 + HARDWARE_ANGLE){
             printf("[YDLIDAR INFO]: angle-distance : [%f, %f, %i]\n", degree, scan->ranges[i], i);
+            degree -= HARDWARE_ANGLE;
             degree_distance[cnt][DEGREE] = degree;
             degree_distance[cnt][DISTANCE] = scan->ranges[i];
             cnt++;    

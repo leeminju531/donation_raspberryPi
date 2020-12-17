@@ -9,11 +9,8 @@
 
 enum _case{
     Basic = 0,
-    Stop ,
     Tracking,
     INTERACTION,
-    Close_Distance,
-    Lost_Detection,
     Back_Origin
 };
 
@@ -31,7 +28,9 @@ enum _monitor{
 #define MAX_LINEAR_VEL 0.5 //(m/s)
 #define MAX_ANGULAR_VEL 2
 
-#define CLOSE_DISTANCE 0.9 // m
+#define CLOSE_DISTANCE 1.1 // between robot and person distance is 1.3m, publish topic for voice call
+#define MIN_DISTANCE 0.9 // between robot and person distance is 1.2m, linearVel = 0.
+#define MAX_DISTANCE 1.4
 
 #define DELTA_LINEAR_VEL 0.05
 #define DELTA_ANGULAR_VEL 0.2
@@ -59,6 +58,10 @@ int detecPerson = false;
 
 double world_distance_at_robotFrame;
 double world_theta_at_robotFrame;
+
+
+int tempCount = 0; // for test
+int topic_count =0; // to prevent topic loss
 
 //  vel unit is m/sec
 double RPM2Vel(double rpm){
@@ -160,17 +163,18 @@ void pos_pid(){
     angularV_Z = p_yaw_val + i_yaw_val + d_yaw_val; //pd control about position angle
    
 
+
+
     if(theta < 0.088 && theta >-0.088) angularV_Z = 0; //0.088rad = 5 degree
 
-    if(distance < 0.8)  {
+    if(distance < MIN_DISTANCE)  {
         linearV_X = 0;
         if(theta < 0.088 && theta >-0.088) angularV_Z = 0; //0.088rad = 5 degree
 
-    }else if(distance <= 1) linearV_X = MAX_LINEAR_VEL*( sqrt(1-(distance-1)/0.2) )*( sqrt(1+(distance-1)/0.2) );   //linearV_X = 5.56*(distance-0.7)*(distance-0.7);
-    else if( distance > 1) linearV_X = MAX_LINEAR_VEL;
+    }else if(distance <= MAX_DISTANCE) linearV_X = MAX_LINEAR_VEL / pow(MAX_DISTANCE - MIN_DISTANCE , 2) * pow( distance - MIN_DISTANCE , 2);
+    else if( distance > MAX_DISTANCE) linearV_X = MAX_LINEAR_VEL;
     
-  //  linearV_X = 0;
-   
+ 
     update_targetRPM(linearV_X,angularV_Z);
     err_yaw_prev = theta;
 }
@@ -189,19 +193,21 @@ void pos_pid(float distance, float theta){
     angularV_Z = p_yaw_val + i_yaw_val + d_yaw_val; //pd control about position angle
    
 
+    
     if(theta < 0.088 && theta >-0.088) angularV_Z = 0; //0.088rad = 5 degree
 
-    if(distance < 0.6)  {
+    if(distance < MIN_DISTANCE)  {
         linearV_X = 0;
         if(linearV_X < 0 )  linearV_X = 0;
 
         if(theta < DEG2RAD(5) && theta >DEG2RAD(-5)) angularV_Z = 0; //0.088rad = 5 degree
     
-    }else if(distance <= 1) linearV_X = MAX_LINEAR_VEL*( sqrt(1-(distance-1)/0.4) )*( sqrt(1+(distance-1)/0.4) );   //linearV_X = 5.56*(distance-0.7)*(distance-0.7);
-    else if( distance > 1) linearV_X = MAX_LINEAR_VEL;
+    }else if(distance <= MAX_DISTANCE) linearV_X = MAX_LINEAR_VEL / pow(MAX_DISTANCE - MIN_DISTANCE , 2) * pow( distance - MIN_DISTANCE , 2);
+    else if( distance > MAX_DISTANCE) linearV_X = MAX_LINEAR_VEL;
     
-  //  linearV_X = 0;
+ 
    
+
     update_targetRPM(linearV_X,angularV_Z);
     err_yaw_prev = theta;
 }
@@ -323,6 +329,7 @@ void Motor_View()
 
    //printf("distance with world : %f || theta with world %f\n",world_distance_at_robotFrame,world_theta_at_robotFrame);
     printf("flag : %d\n",motor_Action_Flag);
+
 	printf("\n");
 }
 
@@ -351,9 +358,7 @@ void InteractionCallback(const std_msgs::String msg){
 }
 
 void buttonCallback(const std_msgs::Byte msg){
-    
-   // if(motor_Action_Flag != Tracking || motor_Action_Flag != INTERACTION)    return;
-    //printf("msg.data : %d \n",msg.data);
+   
     push_Button = msg.data;
 }
 
@@ -453,20 +458,23 @@ int main(int argc, char** argv)
             if(detectCount >= 30){ // 3sec
                  detectCount = 0;
                  motor_Action_Flag = Tracking;
-            }          
+            }    
+
+               //temporary code        
+           // tempTestButton();      
             break;
-       
+
         case Tracking :
             trackingCount++;
             ROS_INFO("Person Tracking");
             
             pos_pid();
-   
-            if(world_distance_at_robotFrame > 4){
+            
+            if(world_distance_at_robotFrame > 4){                                
                 motor_Action_Flag=Back_Origin;
                 trackingCount = 0;
             }
-            if (trackingCount > 1/Control_cycle*10*60*5  ){ // person no response for 5 min ->back origin
+            if (trackingCount > 10*60*3  ){ // person no response for 3 min ->back origin
                 motor_Action_Flag = Back_Origin;
                 trackingCount = 0;
             }
@@ -475,12 +483,16 @@ int main(int argc, char** argv)
                 MonitorControl.publish(monitor_control);
                 trackingCount = 0;
                 printf("voice call\n");
+                
             }
+            printf("distance : %f | theta : :%f \n",distance,theta);
+                
 
-           
+           //temporary code        
+         //   tempTestButton();
 
 
-            if(push_Button == true){
+           if(push_Button == true){
                 push_Button = false;
                 monitor_control.data = "2";
                 MonitorControl.publish(monitor_control);
@@ -494,26 +506,37 @@ int main(int argc, char** argv)
             update_targetRPM(0,0);
         
             //temporary code        
-            detectCount++;
-            if(push_Button == true && detectCount > 20){
-                detectCount = 0;
-                push_Button = false;
-                motor_Action_Flag = Back_Origin;
+//            tempTestButton();
+            
+            topic_count++;
+            if(topic_count < 200){
+                monitor_control.data = "2";
+                MonitorControl.publish(monitor_control);
             }
-            //end 
-        
+    
+
+
+
+
+
             if (interaction_done == true){
                 interaction_done = false;
-                
+                ROS_INFO("INTERACTION Done !! ");
+                topic_count = 0;
                 motor_Action_Flag = Back_Origin;
             }
+
+
 
             break;  
 
         case Back_Origin:
             
+            //temporary code        
+   //         tempTestButton();
 
-            double OBSTACLEDETECTION = 1.2;
+
+            double OBSTACLEDETECTION = 1.5;
             if( distance >0 && distance < OBSTACLEDETECTION && theta < DEG2RAD(20) && 
 theta > DEG2RAD(-20) ){
             linearVel = 0;
@@ -530,8 +553,10 @@ theta > DEG2RAD(-20) ){
             
             
     }
+    //Motor_Controller(LEFT_MOTOR, true, 0);
+    //Motor_Controller(RIGHT_MOTOR, true, 0);
     pidControl();
-    Motor_View();
+    //Motor_View();
 
     
     odom.linear.x = real_linerVel_X;
@@ -544,10 +569,21 @@ theta > DEG2RAD(-20) ){
     loop_rate.sleep();
    
   }
-  
+  printf("motor_Action_Flag : %d\n",motor_Action_Flag);
   Motor_Controller(LEFT_MOTOR, true, 0);
   Motor_Controller(RIGHT_MOTOR, true, 0);
   //stop_thread(ptr);
  // stop_thread(ptr_Right);
   return 0;
+}
+
+
+
+void tempTestButton(){
+    tempCount++;
+    if(push_Button == true && tempCount > 20){
+        tempCount = 0;
+        push_Button = false;
+        motor_Action_Flag = Tracking;
+    } 
 }
