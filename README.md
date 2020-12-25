@@ -1,10 +1,10 @@
 # donation robot code on raspberryPi
 
-## 프로젝트 소개 : HanyangUni_IcPbl CrashLab - 기부 로봇 제작하기
+### 프로젝트 소개 : HanyangUni_IcPbl CrashLab - 기부 로봇 제작하기
                 
-## 프로젝트 명: 럭키(포켓몬스터)
+### 프로젝트 명: 럭키(포켓몬스터)
 
-## 4조 기부로봇 소개
+### 4조 기부로봇 소개
 Covid-19로 인해 고생하는 의료진들을 위해 진심어린응원을 기부를 유도
 
 ## 시나리오
