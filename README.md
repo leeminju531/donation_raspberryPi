@@ -1,6 +1,6 @@
 # donation robot on raspberryPi
 
-### 프로젝트 소개 HanyangUni_IcPbl CrashLab - 기부 로봇 제작하기
+### 프로젝트 소개 : HanyangUni_IcPbl CrashLab - 기부 로봇 제작하기
                 
                 
                 
