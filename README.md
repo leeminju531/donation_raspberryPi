@@ -25,6 +25,11 @@ Covid-19로 인해 고생하는 의료진들을 위해 진심어린응원을 기
 
 3. 복귀
 
+- 로봇이 world Frame을 기준으로 4m 이상 벗어난 경우
+- 사람이 응답하지 않는 경우
+- 인터랙션을 완료한 경우
+위 의 경우 로봇은 원점으로 복귀함
+
 ![ezgif com-gif-maker (5)](https://user-images.githubusercontent.com/70446214/103131682-10e79680-46e5-11eb-95bb-ccb9fd45daa6.gif)
 
 - 로봇은 처음 시작한 자신의 위치를 'world'Frame으로 생성하며, 럭키 자신은
