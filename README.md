@@ -8,7 +8,7 @@
 Covid-19로 인해 고생하는 의료진들을 위해 진심어린응원을 기부를 유도
 
 ## 시나리오
-![image](https://user-images.githubusercontent.com/70446214/103130764-6457e580-46e1-11eb-9751-c8dfc2c41bc9.png)
+![image](https://user-images.githubusercontent.com/70446214/103131597-ba7a5800-46e4-11eb-9454-8bc153989066.png)
 
 ## 주요 기능 구현 방식
 
@@ -25,7 +25,7 @@ Covid-19로 인해 고생하는 의료진들을 위해 진심어린응원을 기
 
 3. 복귀
 
-![ezgif com-gif-maker (4)](https://user-images.githubusercontent.com/70446214/103131442-1f817e00-46e4-11eb-880d-3dbd6053a4c4.gif)
+![ezgif com-gif-maker (5)](https://user-images.githubusercontent.com/70446214/103131682-10e79680-46e5-11eb-95bb-ccb9fd45daa6.gif)
 
 - 로봇은 처음 시작한 자신의 위치를 'world'Frame으로 생성하며, 럭키 자신은
 로봇의 중앙을 중심으로 'base'Frame으로 생성
