@@ -21,10 +21,11 @@
 
 ## 주요 기능 구현 방식
 
-#### 1. 모터 제어 
+### 1. 모터 제어 
     양쪽 모터는 pid 제어를 통해 원하는 속도을 낼 수 있도록 제어
 
-#### 2. Tarcking
+### 2. Tarcking
+![ezgif com-gif-maker (7)](https://user-images.githubusercontent.com/70446214/111062758-551d5280-84ee-11eb-95a2-986822c9a03f.gif)
 
 ![image](https://user-images.githubusercontent.com/70446214/103130856-c3b5f580-46e1-11eb-8ced-a4112b7903e4.png)
 
@@ -32,7 +33,7 @@
   pd제어
 - d 와 th에 (error) 비례하는 선속도와 각속도를 동시에 가해줌
 
-#### 3. 복귀
+### 3. 복귀
 
 - 로봇은 처음 시작한 자신의 위치를 'world'Frame으로 생성하며, 럭키 자신은
 로봇의 중앙을 중심으로 'base'Frame으로 생성
